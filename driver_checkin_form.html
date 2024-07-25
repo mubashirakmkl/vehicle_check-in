@@ -1,54 +1,184 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Driver Check-In</title>
+  <title>MRF Check-In</title>
   <style>
-    .hidden-field {
-      display: none;
+    body {
+      font-family: Lexend, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #F9F9F9;
+      color: #333;
+    }
+    h1 {
+      color: #4CAF50;
+      font-size: 24px;
+      text-align: center;
+    }
+    form {
+      max-width: 500px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+    input, select, button {
+      padding: 10px;
+      margin-top: 5px;
+      width: calc(100% - 22px);
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #A5D6A7;
+    }
+    button:not(:disabled):hover {
+      background-color: #45A049;
+    }
+    .photo-upload {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    .photo-preview {
+      margin-top: 10px;
+      max-width: 100%;
+      border-radius: 5px;
+    }
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      form {
+        padding: 15px;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>Driver Check-In</h1>
+  <h1>MRF Check-In</h1>
   <form id="checkInForm">
-    <label for="vehicle">Select Vehicle:</label>
-    <select id="vehicle" name="vehicle">
-      <option value="Vehicle 1">Vehicle 1</option>
-      <option value="Vehicle 2">Vehicle 2</option>
-      <option value="Vehicle 3">Vehicle 3</option>
+    <label for="mrfName">MRF Name:</label>
+    <input type="text" id="mrfName" name="MRF Name" readonly>
+
+    <label for="vehicleNumber">Select Vehicle:</label>
+    <select id="vehicleNumber" name="Vehicle Number">
+      <!-- Options will be populated by JavaScript -->
     </select>
-    <input type="hidden" id="timestamp" name="timestamp">
-    <input type="hidden" id="prefilledField" name="prefilledField" value="Prefilled Data">
-    <button type="submit">Submit</button>
+
+    <label for="code">Enter Code:</label>
+    <input type="password" id="code" name="Code">
+
+    <label for="photo">Upload Photo:</label>
+    <div class="photo-upload">
+      <input type="file" id="photo" name="Photo" accept="image/*">
+      <img id="photoPreview" class="photo-preview" alt="Photo Preview">
+    </div>
+
+    <button type="submit" disabled>Check In</button>
   </form>
 
   <script>
-    document.getElementById('checkInForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      var vehicle = document.getElementById('vehicle').value;
-      var timestamp = new Date().toISOString();
-      document.getElementById('timestamp').value = timestamp;
+    document.addEventListener("DOMContentLoaded", function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const mrfName = urlParams.get('mrfName');
+      document.getElementById('mrfName').value = mrfName;
 
-      var formData = {
-        vehicle: vehicle,
-        timestamp: timestamp,
-        prefilledField: document.getElementById('prefilledField').value
-      };
+      const codeInput = document.getElementById('code');
+      const submitButton = document.querySelector('button');
+      const photoInput = document.getElementById('photo');
+      const photoPreview = document.getElementById('photoPreview');
 
-      fetch('https://YOUR_SCRIPT_WEB_APP_URL', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      })
-      .then(response => response.json())
-      .then(data => {
-        alert('Check-in successful!');
-        console.log('Success:', data);
-      })
-      .catch((error) => {
-        console.error('Error:', error);
+      codeInput.addEventListener('input', function() {
+        if (codeInput.value === '1234') { // Replace '1234' with the actual static code
+          submitButton.disabled = false;
+        } else {
+          submitButton.disabled = true;
+        }
+      });
+
+      photoInput.addEventListener('change', function() {
+        const file = photoInput.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            photoPreview.src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        } else {
+          photoPreview.src = '';
+        }
+      });
+
+      fetch('https://script.google.com/macros/s/AKfycbweNcIyACOQgVwZLB0Z4XNCQYi0_9zov3uqv8QezGdpANP8x7xCdupukMFAIR8f8a4s2Q/exec')
+        .then(response => response.json())
+        .then(data => {
+          const vehicleSelect = document.getElementById('vehicleNumber');
+          data.vehicles.forEach(vehicle => {
+            const option = document.createElement('option');
+            option.value = vehicle;
+            option.textContent = vehicle;
+            vehicleSelect.appendChild(option);
+          });
+        })
+        .catch(error => console.error('Error fetching vehicle list:', error));
+
+      document.getElementById('checkInForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const mrfName = document.getElementById('mrfName').value;
+        const vehicleNumber = document.getElementById('vehicleNumber').value;
+        const date = new Date().toLocaleDateString();
+        const time = new Date().toLocaleTimeString();
+        const photoFile = document.getElementById('photo').files[0];
+
+        if (photoFile) {
+          const reader = new FileReader();
+          reader.onloadend = function() {
+            const photoBase64 = reader.result.split(',')[1];
+
+            const formData = new FormData();
+            formData.append('MRF Name', mrfName);
+            formData.append('Date', date);
+            formData.append('Time', time);
+            formData.append('Vehicle Number', vehicleNumber);
+            formData.append('Photo', photoBase64);
+
+            fetch('https://script.google.com/macros/s/AKfycbweNcIyACOQgVwZLB0Z4XNCQYi0_9zov3uqv8QezGdpANP8x7xCdupukMFAIR8f8a4s2Q/exec', {
+              method: 'POST',
+              body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success') {
+                alert('Check-in successful!');
+              } else {
+                alert('Check-in failed: ' + data.message);
+              }
+            })
+            .catch((error) => {
+              console.error('Error:', error);
+            });
+          };
+          reader.readAsDataURL(photoFile);
+        } else {
+          alert('Please upload a photo.');
+        }
       });
     });
   </script>
