@@ -2,6 +2,7 @@
 <html>
 <head>
   <title>MRF Check-In</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       font-family: Lexend, Arial, sans-serif;
@@ -9,42 +10,57 @@
       padding: 20px;
       background-color: #F9F9F9;
       color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
     }
     h1 {
       color: #4CAF50;
       font-size: 24px;
       text-align: center;
+      margin-bottom: 20px;
     }
     form {
-      max-width: 500px;
-      margin: auto;
       background: #fff;
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+      box-sizing: border-box;
     }
     label {
       display: block;
-      margin-top: 10px;
-      font-size: 16px;
+      margin-top: 15px;
+      font-size: 14px;
+      font-weight: bold;
     }
     input, select, button {
-      padding: 10px;
+      width: 100%;
+      padding: 12px;
       margin-top: 5px;
-      width: calc(100% - 22px);
       border: 1px solid #ccc;
       border-radius: 5px;
       box-sizing: border-box;
-      font-size: 14px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+    input:focus, select:focus, button:focus {
+      outline: none;
+      border-color: #4CAF50;
+      box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
     }
     button {
       background-color: #4CAF50;
       color: white;
       border: none;
       cursor: pointer;
+      margin-top: 20px;
     }
     button:disabled {
       background-color: #A5D6A7;
+      cursor: not-allowed;
     }
     button:not(:disabled):hover {
       background-color: #45A049;
@@ -54,32 +70,79 @@
       align-items: center;
       justify-content: center;
       flex-direction: column;
+      margin-top: 10px;
     }
     .photo-preview {
       margin-top: 10px;
       max-width: 100%;
       border-radius: 5px;
     }
+    .vehicle-option {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 5px;
+      background-color: #f0f0f0;
+    }
+    .vehicle-option div {
+      display: flex;
+      align-items: center;
+    }
+    .vehicle-option input {
+      margin-right: 5px;
+    }
+    .vehicle-option label {
+      margin-top: 0;
+      font-size: 14px;
+    }
     @media (max-width: 600px) {
-      body {
-        padding: 10px;
-      }
       form {
         padding: 15px;
+      }
+      h1 {
+        font-size: 20px;
+      }
+      .vehicle-option {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .vehicle-option div {
+        margin-bottom: 10px;
+        width: 100%;
       }
     }
   </style>
 </head>
 <body>
-  <h1>MRF Check-In</h1>
   <form id="checkInForm">
+    <h1>MRF Check-In</h1>
     <label for="mrfName">MRF Name:</label>
     <input type="text" id="mrfName" name="MRF Name" readonly>
 
-    <label for="vehicleNumber">Select Vehicle:</label>
-    <select id="vehicleNumber" name="Vehicle Number">
-      <!-- Options will be populated by JavaScript -->
-    </select>
+    <div class="vehicle-option">
+      <div>
+        <input type="radio" id="greenWorms" name="vehicleType" value="Green Worms" checked>
+        <label for="greenWorms">Green Worms</label>
+      </div>
+      <div>
+        <input type="radio" id="other" name="vehicleType" value="Other">
+        <label for="other">Other</label>
+      </div>
+    </div>
+
+    <div id="greenWormsSection">
+      <label for="vehicleNumber">Select Vehicle:</label>
+      <select id="vehicleNumber" name="Vehicle Number">
+        <option value="" disabled selected>Select Vehicle</option>
+        <!-- Options will be populated by JavaScript -->
+      </select>
+    </div>
+
+    <div id="otherSection" style="display: none;">
+      <label for="otherVehicleNumber">Enter Vehicle Number:</label>
+      <input type="text" id="otherVehicleNumber" name="Other Vehicle Number" pattern="[A-Z0-9]+" title="Only uppercase letters and numbers without spaces" />
+    </div>
 
     <label for="code">Enter Code:</label>
     <input type="password" id="code" name="Code">
@@ -93,6 +156,7 @@
     <button type="submit" disabled>Check In</button>
   </form>
 
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -103,12 +167,42 @@
       const submitButton = document.querySelector('button');
       const photoInput = document.getElementById('photo');
       const photoPreview = document.getElementById('photoPreview');
+      const vehicleNumber = document.getElementById('vehicleNumber');
+      const otherVehicleNumber = document.getElementById('otherVehicleNumber');
+      const vehicleTypeRadio = document.getElementsByName('vehicleType');
+      const greenWormsSection = document.getElementById('greenWormsSection');
+      const otherSection = document.getElementById('otherSection');
+
+      function updateVehicleInput() {
+        if (document.getElementById('greenWorms').checked) {
+          greenWormsSection.style.display = 'block';
+          otherSection.style.display = 'none';
+        } else {
+          greenWormsSection.style.display = 'none';
+          otherSection.style.display = 'block';
+        }
+      }
+
+      vehicleTypeRadio.forEach(radio => {
+        radio.addEventListener('change', updateVehicleInput);
+      });
+
+      updateVehicleInput();
 
       codeInput.addEventListener('input', function() {
-        if (codeInput.value === '1234') { // Replace '1234' with the actual static code
+        if (codeInput.value === '1234') {
           submitButton.disabled = false;
         } else {
           submitButton.disabled = true;
+        }
+      });
+
+      otherVehicleNumber.addEventListener('input', function() {
+        const regex = /^[A-Z0-9]+$/;
+        if (!regex.test(otherVehicleNumber.value)) {
+          otherVehicleNumber.setCustomValidity("Please enter only uppercase letters and numbers without spaces.");
+        } else {
+          otherVehicleNumber.setCustomValidity("");
         }
       });
 
@@ -122,13 +216,12 @@
             img.onload = function() {
               const canvas = document.createElement('canvas');
               const ctx = canvas.getContext('2d');
-              
-              // Set the canvas dimensions to the desired output size
-              const maxWidth = 800; // Set the maximum width
-              const maxHeight = 600; // Set the maximum height
+
+              const maxWidth = 800;
+              const maxHeight = 600;
               let width = img.width;
               let height = img.height;
-              
+
               if (width > height) {
                 if (width > maxWidth) {
                   height *= maxWidth / width;
@@ -140,14 +233,13 @@
                   height = maxHeight;
                 }
               }
-              
+
               canvas.width = width;
               canvas.height = height;
-              
+
               ctx.drawImage(img, 0, 0, width, height);
-              
-              // Compress the image and get the data URL
-              const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); // Set the quality (0.7 = 70%)
+
+              const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
               photoPreview.src = compressedDataUrl;
               photoPreview.dataset.compressedData = compressedDataUrl.split(',')[1];
             };
@@ -162,6 +254,7 @@
         .then(response => response.json())
         .then(data => {
           const vehicleSelect = document.getElementById('vehicleNumber');
+          vehicleSelect.innerHTML = '<option value="" disabled selected>Select Vehicle</option>';
           data.vehicles.forEach(vehicle => {
             const option = document.createElement('option');
             option.value = vehicle;
@@ -173,9 +266,10 @@
 
       document.getElementById('checkInForm').addEventListener('submit', function(e) {
         e.preventDefault();
+        submitButton.disabled = true;
 
         const mrfName = document.getElementById('mrfName').value;
-        const vehicleNumber = document.getElementById('vehicleNumber').value;
+        const vehicleNumberValue = document.getElementById('greenWorms').checked ? document.getElementById('vehicleNumber').value : document.getElementById('otherVehicleNumber').value;
         const date = new Date().toLocaleDateString();
         const time = new Date().toLocaleTimeString();
         const compressedPhotoBase64 = photoPreview.dataset.compressedData;
@@ -185,7 +279,7 @@
           formData.append('MRF Name', mrfName);
           formData.append('Date', date);
           formData.append('Time', time);
-          formData.append('Vehicle Number', vehicleNumber);
+          formData.append('Vehicle Number', vehicleNumberValue);
           formData.append('Photo', compressedPhotoBase64);
 
           fetch('https://script.google.com/macros/s/AKfycbweNcIyACOQgVwZLB0Z4XNCQYi0_9zov3uqv8QezGdpANP8x7xCdupukMFAIR8f8a4s2Q/exec', {
@@ -199,12 +293,15 @@
             } else {
               alert('Check-in failed: ' + data.message);
             }
+            submitButton.disabled = false;
           })
           .catch((error) => {
             console.error('Error:', error);
+            submitButton.disabled = false;
           });
         } else {
           alert('Please upload a photo.');
+          submitButton.disabled = false;
         }
       });
     });
