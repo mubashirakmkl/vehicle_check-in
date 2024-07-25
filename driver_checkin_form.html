@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Driver Check-In</title>
+  <style>
+    .hidden-field {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Driver Check-In</h1>
+  <form id="checkInForm">
+    <label for="vehicle">Select Vehicle:</label>
+    <select id="vehicle" name="vehicle">
+      <option value="Vehicle 1">Vehicle 1</option>
+      <option value="Vehicle 2">Vehicle 2</option>
+      <option value="Vehicle 3">Vehicle 3</option>
+    </select>
+    <input type="hidden" id="timestamp" name="timestamp">
+    <input type="hidden" id="prefilledField" name="prefilledField" value="Prefilled Data">
+    <button type="submit">Submit</button>
+  </form>
+
+  <script>
+    document.getElementById('checkInForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var vehicle = document.getElementById('vehicle').value;
+      var timestamp = new Date().toISOString();
+      document.getElementById('timestamp').value = timestamp;
+
+      var formData = {
+        vehicle: vehicle,
+        timestamp: timestamp,
+        prefilledField: document.getElementById('prefilledField').value
+      };
+
+      fetch('https://YOUR_SCRIPT_WEB_APP_URL', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        alert('Check-in successful!');
+        console.log('Success:', data);
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+    });
+  </script>
+</body>
+</html>
