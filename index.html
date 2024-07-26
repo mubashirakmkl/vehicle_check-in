@@ -260,7 +260,7 @@
         }
       });
 
-      fetch('https://script.google.com/macros/s/AKfycbweNcIyACOQgVwZLB0Z4XNCQYi0_9zov3uqv8QezGdpANP8x7xCdupukMFAIR8f8a4s2Q/exec')
+      fetch('https://script.google.com/macros/s/AKfycbzkFFaU8lwbagJ4P4FRdHFBrCY_hCnKhlJWlqImseSzqGhSBRrT9zofqc-Ak5cu8wg5Kw/exec')
         .then(response => response.json())
         .then(data => {
           const vehicleSelect = document.getElementById('vehicleNumber');
@@ -293,7 +293,7 @@
           formData.append('Vehicle Number', vehicleNumberValue);
           formData.append('Photo', compressedPhotoBase64);
 
-          fetch('https://script.google.com/macros/s/AKfycbweNcIyACOQgVwZLB0Z4XNCQYi0_9zov3uqv8QezGdpANP8x7xCdupukMFAIR8f8a4s2Q/exec', {
+          fetch('https://script.google.com/macros/s/AKfycbzkFFaU8lwbagJ4P4FRdHFBrCY_hCnKhlJWlqImseSzqGhSBRrT9zofqc-Ak5cu8wg5Kw/exec', {
             method: 'POST',
             body: formData
           })
