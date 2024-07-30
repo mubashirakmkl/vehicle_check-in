@@ -213,6 +213,7 @@
         longitudeInput.value = position.coords.longitude;
       }, function(error) {
         console.error('Error getting location:', error);
+        alert('Error getting location: ' + error.message);
       });
 
       fetch('https://script.google.com/macros/s/AKfycbzkFFaU8lwbagJ4P4FRdHFBrCY_hCnKhlJWlqImseSzqGhSBRrT9zofqc-Ak5cu8wg5Kw/exec')
@@ -247,11 +248,11 @@
         formData.append('Date', date);
         formData.append('Time', time);
         formData.append('Vehicle Number', vehicleNumberValue);
-        formData.append('Destination MRF', destinationMrf);
+        formData.append('MRF Name', destinationMrf);
         formData.append('Latitude', latitude);
         formData.append('Longitude', longitude);
 
-        fetch('https://script.google.com/macros/s/AKfycbyXKfMU0O8jU7ouRbjVq9p0jow3oCJcSJjQoafzpzLQkbxn-IGMQW1dQ0a4QW_1K01WTQ/exec', {
+        fetch('https://script.google.com/macros/s/AKfycbwQ6TyEy0A1EyPpBfSXmWoFFNSPBjHsl281RDkx30RTbPqHVrcXAj2QgebzZV9jWFS4xw/exec', {
           method: 'POST',
           body: formData
         })
