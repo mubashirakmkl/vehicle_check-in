@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>MRF Check-In</title>
+  <title>Collection Point Check-In</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
   <style>
@@ -66,18 +66,6 @@
     button:not(:disabled):hover {
       background-color: #45A049;
     }
-    .photo-upload {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      margin-top: 10px;
-    }
-    .photo-preview {
-      margin-top: 10px;
-      max-width: 100%;
-      border-radius: 5px;
-    }
     .vehicle-option {
       display: flex;
       justify-content: space-between;
@@ -117,9 +105,9 @@
 </head>
 <body>
   <form id="checkInForm">
-    <h1>MRF Check-In</h1>
-    <label for="mrfName">MRF Name:</label>
-    <input type="text" id="mrfName" name="MRF Name" readonly>
+    <h1>Collection Point Check-In</h1>
+    <label for="collectionpointName">Collection Point Name:</label>
+    <input type="text" id="collectionpointName" name="Collection Point Name" readonly>
 
     <div class="vehicle-option">
       <div>
@@ -145,14 +133,18 @@
       <input type="text" id="otherVehicleNumber" name="Other Vehicle Number" pattern="[A-Z0-9]+" title="Only uppercase letters and numbers without spaces" />
     </div>
 
+    <label for="destinationMrf">Select Destination MRF:</label>
+    <select id="destinationMrf" name="Destination MRF">
+      <option value="MRF1">MRF1</option>
+      <option value="MRF2">MRF2</option>
+      <option value="MRF3">MRF3</option>
+    </select>
+
     <label for="code">Enter Code:</label>
     <input type="password" id="code" name="Code">
 
-    <label for="photo">Upload Photo:</label>
-    <div class="photo-upload">
-      <input type="file" id="photo" name="Photo" accept="image/*">
-      <img id="photoPreview" class="photo-preview" alt="Photo Preview">
-    </div>
+    <input type="hidden" id="latitude" name="Latitude">
+    <input type="hidden" id="longitude" name="Longitude">
 
     <button type="submit" disabled>Check In</button>
   </form>
@@ -162,18 +154,18 @@
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       const urlParams = new URLSearchParams(window.location.search);
-      const mrfName = urlParams.get('mrfName');
-      document.getElementById('mrfName').value = mrfName;
+      const collectionpointName = urlParams.get('collectionpointName');
+      document.getElementById('collectionpointName').value = collectionpointName;
 
       const codeInput = document.getElementById('code');
       const submitButton = document.querySelector('button');
-      const photoInput = document.getElementById('photo');
-      const photoPreview = document.getElementById('photoPreview');
       const vehicleNumber = document.getElementById('vehicleNumber');
       const otherVehicleNumber = document.getElementById('otherVehicleNumber');
       const vehicleTypeRadio = document.getElementsByName('vehicleType');
       const greenWormsSection = document.getElementById('greenWormsSection');
       const otherSection = document.getElementById('otherSection');
+      const latitudeInput = document.getElementById('latitude');
+      const longitudeInput = document.getElementById('longitude');
 
       const choices = new Choices(vehicleNumber, {
         searchEnabled: true,
@@ -216,48 +208,11 @@
         }
       });
 
-      photoInput.addEventListener('change', function() {
-        const file = photoInput.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            const img = new Image();
-            img.src = e.target.result;
-            img.onload = function() {
-              const canvas = document.createElement('canvas');
-              const ctx = canvas.getContext('2d');
-
-              const maxWidth = 800;
-              const maxHeight = 600;
-              let width = img.width;
-              let height = img.height;
-
-              if (width > height) {
-                if (width > maxWidth) {
-                  height *= maxWidth / width;
-                  width = maxWidth;
-                }
-              } else {
-                if (height > maxHeight) {
-                  width *= maxHeight / height;
-                  height = maxHeight;
-                }
-              }
-
-              canvas.width = width;
-              canvas.height = height;
-
-              ctx.drawImage(img, 0, 0, width, height);
-
-              const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-              photoPreview.src = compressedDataUrl;
-              photoPreview.dataset.compressedData = compressedDataUrl.split(',')[1];
-            };
-          };
-          reader.readAsDataURL(file);
-        } else {
-          photoPreview.src = '';
-        }
+      navigator.geolocation.getCurrentPosition(function(position) {
+        latitudeInput.value = position.coords.latitude;
+        longitudeInput.value = position.coords.longitude;
+      }, function(error) {
+        console.error('Error getting location:', error);
       });
 
       fetch('https://script.google.com/macros/s/AKfycbzkFFaU8lwbagJ4P4FRdHFBrCY_hCnKhlJWlqImseSzqGhSBRrT9zofqc-Ak5cu8wg5Kw/exec')
@@ -279,41 +234,40 @@
         e.preventDefault();
         submitButton.disabled = true;
 
-        const mrfName = document.getElementById('mrfName').value;
+        const collectionpointName = document.getElementById('collectionpointName').value;
         const vehicleNumberValue = document.getElementById('greenWorms').checked ? document.getElementById('vehicleNumber').value : document.getElementById('otherVehicleNumber').value;
+        const destinationMrf = document.getElementById('destinationMrf').value;
         const date = new Date().toLocaleDateString();
         const time = new Date().toLocaleTimeString();
-        const compressedPhotoBase64 = photoPreview.dataset.compressedData;
+        const latitude = document.getElementById('latitude').value;
+        const longitude = document.getElementById('longitude').value;
 
-        if (compressedPhotoBase64) {
-          const formData = new FormData();
-          formData.append('MRF Name', mrfName);
-          formData.append('Date', date);
-          formData.append('Time', time);
-          formData.append('Vehicle Number', vehicleNumberValue);
-          formData.append('Photo', compressedPhotoBase64);
+        const formData = new FormData();
+        formData.append('Collection Point Name', collectionpointName);
+        formData.append('Date', date);
+        formData.append('Time', time);
+        formData.append('Vehicle Number', vehicleNumberValue);
+        formData.append('Destination MRF', destinationMrf);
+        formData.append('Latitude', latitude);
+        formData.append('Longitude', longitude);
 
-          fetch('https://script.google.com/macros/s/AKfycbzkFFaU8lwbagJ4P4FRdHFBrCY_hCnKhlJWlqImseSzqGhSBRrT9zofqc-Ak5cu8wg5Kw/exec', {
-            method: 'POST',
-            body: formData
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.status === 'success') {
-              alert('Check-in successful!');
-            } else {
-              alert('Check-in failed: ' + data.message);
-            }
-            submitButton.disabled = false;
-          })
-          .catch((error) => {
-            console.error('Error:', error);
-            submitButton.disabled = false;
-          });
-        } else {
-          alert('Please upload a photo.');
+        fetch('https://script.google.com/macros/s/AKfycbyXKfMU0O8jU7ouRbjVq9p0jow3oCJcSJjQoafzpzLQkbxn-IGMQW1dQ0a4QW_1K01WTQ/exec', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            alert('Check-in successful!');
+          } else {
+            alert('Check-in failed: ' + data.message);
+          }
           submitButton.disabled = false;
-        }
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+          submitButton.disabled = false;
+        });
       });
     });
   </script>
